@@ -44,14 +44,20 @@ def nutrition_agent(state: State):
     system_message = SystemMessage(content=NUTRITION_AGENT_SYSTEM_PROMPT)
     response = nutrition_agent_llm.invoke([system_message] + state["messages"])
     nutrition_data = response.dict()
-    store_nutrition_data(nutrition_data)
+    try:
+        store_nutrition_data(nutrition_data)
+        response = AIMessage(content="Nutrition data stored successfully.")
+    except Exception as e:
+        print(f"Error storing nutrition data: {e}")
+        response = AIMessage(content="Failed to store nutrition data.")
+        return {"messages": [system_message] + state["messages"] + [response]}
+
     response = AIMessage(content="Nutrition data stored successfully.")
     return {"messages": [system_message] + state["messages"] + [response]}
 
 def medical_conditions_agent(state: State):
     system_message = SystemMessage(content=MEDICAL_CONDITIONS_AGENT_SYSTEM_PROMPT)
     llm_response = medical_conditions_agent_llm.invoke([system_message] + state["messages"])
-    print(type(llm_response))
     medical_conditions_data = llm_response.dict()
     try:
         store_medical_conditions_data(medical_conditions_data)
@@ -90,15 +96,15 @@ graph = graph_builder.compile(checkpointer=memory)
 
 # Chat part
 
-config = {"configurable": {"thread_id": "1"}}
-def stream_graph_updates(user_input: str):
-    for event in graph.stream({"messages": [{"role": "user", "content": user_input}]}, config=config):
-        for key, value in event.items():
-            print(key, value["messages"][-1].content)
+# config = {"configurable": {"thread_id": "1"}}
+# def stream_graph_updates(user_input: str):
+#     for event in graph.stream({"messages": [{"role": "user", "content": user_input}]}, config=config):
+#         for key, value in event.items():
+#             print(key, value["messages"][-1].content)
 
-while True:
-    user_input = input("User: ")
-    if user_input.lower() in ["quit", "exit", "q"]:
-        print("Goodbye!")
-        break
-    stream_graph_updates(user_input)
+# while True:
+#     user_input = input("User: ")
+#     if user_input.lower() in ["quit", "exit", "q"]:
+#         print("Goodbye!")
+#         break
+#     stream_graph_updates(user_input)

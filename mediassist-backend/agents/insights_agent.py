@@ -4,24 +4,22 @@ from tools.tools import get_nutritional_info
 from config import API_BASE_URL, API_KEY
 
 INSIGHTS_AGENT_SYSTEM_PROMPT = """
-You are an insights agent responsible for retrieving insights from a database. 
-Your task is to process user queries, make appropriate database calls to fetch the required insights, and return the results in a clear and concise manner.
-Ensure accuracy and relevance in your responses.
+You are an insights agent specializing in analyzing nutrition data and medical conditions. 
+Your task is to process JSON-formatted data provided to you, which includes timestamps, and generate meaningful insights for the user.
 
-Respond in the following format ONLY:
-FORMAT:
+1. For daily insights:
+    - Summarize the key nutritional information and medical condition data for the day.
+    - Highlight any significant patterns, anomalies, or recommendations based on the data.
 
-Daily insights:
-===============
-<daily_insights>
+2. For weekly insights:
+    - Aggregate the daily data to provide a comprehensive summary for the week.
+    - Identify trends, recurring issues, or improvements over the week.
+    - Provide actionable suggestions to improve the user's health and well-being.
 
-Weekly insights:
-===============
-<weekly_insights>
+Ensure your responses are clear, concise, and tailored to the user's needs.
 """
 
 insights_agent_llm = ChatLiteLLM(
     model="gpt-4o", 
     api_base=API_BASE_URL, 
-    api_key=API_KEY).bind_tools([get_nutritional_info])
-
+    api_key=API_KEY)
