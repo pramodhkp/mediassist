@@ -38,15 +38,49 @@ body {
   flex-direction: column;
   background-color: #fff;
 }
-
-.daily-insights, .weekly-insights {
+.lifestyle-profile-container, .daily-insights, .weekly-insights {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
 }
 
-.daily-insights {
+.lifestyle-profile-container, .daily-insights {
   border-bottom: 1px solid #e8e8e8;
+}
+
+.lifestyle-profile {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Lifestyle profile styling */
+.lifestyle-profile .ant-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.lifestyle-profile .ant-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.lifestyle-profile .ant-card-head {
+  background-color: #f9f9f9;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.lifestyle-profile .ant-tag {
+  margin: 4px;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.lifestyle-profile .ant-tag .anticon {
+  margin-right: 6px;
 }
 
 /* Scrollbar styling */

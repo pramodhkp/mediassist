@@ -4,6 +4,7 @@ import './App.css';
 import ChatInterface from './components/ChatInterface';
 import DailyInsights from './components/DailyInsights';
 import WeeklyInsights from './components/WeeklyInsights';
+import LifestyleProfile from './components/LifestyleProfile';
 
 const { Header, Content } = Layout;
 
@@ -18,6 +19,9 @@ function App() {
           <ChatInterface />
         </div>
         <div className="insights-container">
+          <div className="lifestyle-profile-container">
+            <LifestyleProfile />
+          </div>
           <div className="daily-insights">
             <DailyInsights />
           </div>

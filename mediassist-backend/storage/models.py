@@ -15,3 +15,16 @@ class MedicalConditionData(BaseModel):
     treatment: str
     prevention: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class UserProfileData(BaseModel):
+    age: int = None
+    gender: str = None
+    height: float = None  # in cm
+    weight: float = None  # in kg
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class InsightsData(BaseModel):
+    analysis_type: str  # "daily" or "weekly"
+    content: str  # The actual insights content
+    date: datetime = Field(default_factory=datetime.utcnow)
+    metadata: dict = {}  # Optional metadata about the insights

@@ -1,0 +1,10 @@
+flask
+flask-cors
+pymongo
+langchain
+langchain-community
+langchain-core
+langgraph==0.3.2
+schedule
+python-dotenv
+requests

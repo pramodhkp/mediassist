@@ -10,8 +10,11 @@ from agents.input_agent import input_agent_llm, INPUT_AGENT_SYSTEM_PROMPT
 from agents.output_agent import output_agent_llm, OUTPUT_AGENT_SYSTEM_PROMPT
 from agents.orchestrator_agent import orchestrator_agent_llm, ORCHESTRATOR_SYSTEM_PROMPT
 from agents.nutrition_agent import nutrition_agent_llm, NUTRITION_AGENT_SYSTEM_PROMPT
-from storage.client import store_nutrition_data, store_medical_conditions_data
+from agents.insights_agent import insights_agent_llm, INSIGHTS_AGENT_SYSTEM_PROMPT
+from agents.intent_classifier_agent import intent_classifier_llm, INTENT_CLASSIFIER_SYSTEM_PROMPT
+from storage.client import store_nutrition_data, store_medical_conditions_data, store_user_profile_data
 from agents.medical_conditions_agent import medical_conditions_agent_llm, MEDICAL_CONDITIONS_AGENT_SYSTEM_PROMPT
+from agents.user_profile_agent import user_profile_agent_llm, USER_PROFILE_AGENT_SYSTEM_PROMPT
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
@@ -19,28 +22,46 @@ class State(TypedDict):
 graph_builder = StateGraph(State)
 
 def forward_or_respond(state):
-    """Decides whether to forward the request to another agent or respond directly."""
-    user_message = state["messages"][-1]
-    if "nutrition_agent" in user_message.content:
+    """Decides whether to forward the request to another agent or respond directly using LLM-based intent classification."""
+    user_message = state["messages"][0]
+    system_message = SystemMessage(content=INTENT_CLASSIFIER_SYSTEM_PROMPT)
+    
+    # Use the intent classifier to determine thpe user's intent
+    classification = intent_classifier_llm.invoke([system_message, user_message])
+    
+    print(f"Intent classification: {classification.intent} (confidence: {classification.confidence})")
+    print(f"Explanation: {classification.explanation}")
+    
+    # Route based on the classified intent
+    if classification.intent == "user_profile":
+        return "user_profile_agent"
+    elif classification.intent == "nutrition":
         return "nutrition_agent"
-    elif "medical_conditions_agent" in user_message.content:
+    elif classification.intent == "medical_conditions":
         return "medical_conditions_agent"
-    else:
+    elif classification.intent == "data_fetcher":
+        return "data_fetcher_agent"
+    else:  # general or any other intent
         return "respond"
 
 def input_agent(state: State):
+    print("INPUT AGENT")
     system_message = SystemMessage(content=INPUT_AGENT_SYSTEM_PROMPT)
     return {"messages": [input_agent_llm.invoke([system_message] + state["messages"])]}
 
 def output_agent(state: State):
+    print("OUTPUT AGENT")
+    print(state["messages"][-1])
     system_message = SystemMessage(content=OUTPUT_AGENT_SYSTEM_PROMPT)
     return {"messages": [output_agent_llm.invoke([system_message] + state["messages"])]}
 
 def orchestrator_agent(state: State):
+    print("ORCHESTRATOR AGENT")
     system_message = SystemMessage(content=ORCHESTRATOR_SYSTEM_PROMPT)
     return {"messages": [orchestrator_agent_llm.invoke([system_message] + state["messages"])]}
 
 def nutrition_agent(state: State):
+    print("NUTRITION AGENT")
     system_message = SystemMessage(content=NUTRITION_AGENT_SYSTEM_PROMPT)
     response = nutrition_agent_llm.invoke([system_message] + state["messages"])
     nutrition_data = response.dict()
@@ -56,6 +77,7 @@ def nutrition_agent(state: State):
     return {"messages": [system_message] + state["messages"] + [response]}
 
 def medical_conditions_agent(state: State):
+    print("MEDICAL CONDITIONS AGENT")
     system_message = SystemMessage(content=MEDICAL_CONDITIONS_AGENT_SYSTEM_PROMPT)
     llm_response = medical_conditions_agent_llm.invoke([system_message] + state["messages"])
     medical_conditions_data = llm_response.dict()
@@ -69,12 +91,43 @@ def medical_conditions_agent(state: State):
 
     return {"messages": [system_message] + state["messages"] + [response]}
 
+def insights_agent(state: State):
+    """
+    Handles nutrition-related queries by analyzing nutrition data and providing actionable insights.
+    """
+    print("INSIGHTS AGENT")
+    system_message = SystemMessage(content=INSIGHTS_AGENT_SYSTEM_PROMPT)
+    
+    # Get response from the insights agent
+    response = insights_agent_llm.invoke([system_message] + state["messages"])
+    
+    return {"messages": state["messages"] + [AIMessage(content=response.content)]}
+
+def user_profile_agent(state: State):
+    print("USER PROFILE AGENT")
+    system_message = SystemMessage(content=USER_PROFILE_AGENT_SYSTEM_PROMPT)
+    llm_response = user_profile_agent_llm.invoke([system_message] + state["messages"])
+    user_profile_data = llm_response.dict()
+    
+    try:
+        # Store the profile data
+        store_user_profile_data(user_profile_data)
+        response = AIMessage(content="Thank you! I've updated your profile information.")
+    except Exception as e:
+        print(f"Error storing user profile data: {e}")
+        response = AIMessage(content="I'm sorry, I couldn't save your profile information. Please try again.")
+        return {"messages": [system_message] + state["messages"] + [response]}
+
+    return {"messages": [system_message] + state["messages"] + [response]}
+
 # Nodes in the graph
 graph_builder.add_node("input_agent", input_agent)
 graph_builder.add_node("orchestrator_agent", orchestrator_agent)
 graph_builder.add_node("output_agent", output_agent)
 graph_builder.add_node("nutrition_agent", nutrition_agent)
 graph_builder.add_node("medical_conditions_agent", medical_conditions_agent)
+graph_builder.add_node("user_profile_agent", user_profile_agent)
+graph_builder.add_node("insights_agent", insights_agent)
 
 # Edges in the graph
 graph_builder.add_edge(START, "input_agent")
@@ -83,12 +136,15 @@ graph_builder.add_edge("input_agent", "orchestrator_agent")
 graph_builder.add_conditional_edges("orchestrator_agent", forward_or_respond, {
     "nutrition_agent": "nutrition_agent",
     "medical_conditions_agent": "medical_conditions_agent",
+    "user_profile_agent": "user_profile_agent",
+    "insights_agent": "insights_agent",
     "respond": "output_agent",
 })
 
 graph_builder.add_edge("nutrition_agent", "output_agent")
 graph_builder.add_edge("medical_conditions_agent", "output_agent")
-
+graph_builder.add_edge("user_profile_agent", "output_agent")
+graph_builder.add_edge("insights_agent", "output_agent")
 graph_builder.add_edge("output_agent", END)
 
 memory = MemorySaver()
