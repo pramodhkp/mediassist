@@ -1,5 +1,8 @@
 from pymongo import MongoClient
 from datetime import datetime, timedelta
+import os
+import shutil
+import uuid
 
 # Connect to MongoDB
 
@@ -264,3 +267,157 @@ def analyze_nutrition_data(data):
             "fats": avg_fats
         }
     }
+
+def ensure_upload_dir():
+    """
+    Ensures that the uploads directory exists.
+    
+    Returns:
+        The path to the uploads directory
+    """
+    # Create uploads directory in the root of the project if it doesn't exist
+    uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../uploads'))
+    if not os.path.exists(uploads_dir):
+        os.makedirs(uploads_dir)
+    return uploads_dir
+
+def store_medical_report(file_data, filename, file_type, file_size, description=None):
+    """
+    Stores a medical report file in the filesystem and metadata in MongoDB.
+    
+    Args:
+        file_data (bytes or file-like object): The file data or file object
+        filename (str): The name of the file
+        file_type (str): The MIME type of the file
+        file_size (int): The size of the file in bytes
+        description (str, optional): A description of the file
+    
+    Returns:
+        The ID of the inserted metadata record
+    """
+    # Generate a unique filename to avoid collisions
+    unique_filename = f"{uuid.uuid4()}_{filename}"
+    
+    # Ensure uploads directory exists
+    uploads_dir = ensure_upload_dir()
+    file_path = os.path.join(uploads_dir, unique_filename)
+    
+    # Save the file to the filesystem
+    if hasattr(file_data, 'read'):
+        # If file_data is a file-like object
+        with open(file_path, 'wb') as f:
+            shutil.copyfileobj(file_data, f)
+    else:
+        # If file_data is bytes
+        with open(file_path, 'wb') as f:
+            f.write(file_data)
+    
+    # Store metadata in MongoDB
+    client = get_mongo_client()
+    db = client["medical_reports_db"]
+    collection = db["medical_reports_metadata"]
+    
+    metadata = {
+        "filename": filename,
+        "stored_filename": unique_filename,
+        "file_type": file_type,
+        "file_size": file_size,
+        "description": description,
+        "uploadDate": datetime.utcnow()
+    }
+    
+    result = collection.insert_one(metadata)
+    return result.inserted_id
+
+def get_medical_reports():
+    """
+    Retrieves a list of all medical reports metadata.
+    
+    Returns:
+        A list of medical report metadata
+    """
+    client = get_mongo_client()
+    db = client["medical_reports_db"]
+    collection = db["medical_reports_metadata"]
+    
+    # Get all metadata records
+    reports = collection.find().sort("uploadDate", -1)
+    
+    # Convert to list and format for JSON serialization
+    result = []
+    for report in reports:
+        result.append({
+            "_id": str(report["_id"]),
+            "filename": report["filename"],
+            "file_type": report["file_type"],
+            "file_size": report["file_size"],
+            "description": report.get("description"),
+            "uploadDate": report["uploadDate"].isoformat()
+        })
+    
+    return result
+
+def get_medical_report(file_id):
+    """
+    Retrieves a specific medical report file.
+    
+    Args:
+        file_id (str): The ID of the metadata record
+    
+    Returns:
+        A tuple containing (file_path, filename, content_type)
+    """
+    from bson.objectid import ObjectId
+    
+    client = get_mongo_client()
+    db = client["medical_reports_db"]
+    collection = db["medical_reports_metadata"]
+    
+    # Get the metadata record
+    metadata = collection.find_one({"_id": ObjectId(file_id)})
+    if not metadata:
+        return None, None, None
+    
+    # Get the file path
+    uploads_dir = ensure_upload_dir()
+    file_path = os.path.join(uploads_dir, metadata["stored_filename"])
+    
+    # Check if file exists
+    if not os.path.exists(file_path):
+        return None, None, None
+    
+    return file_path, metadata["filename"], metadata["file_type"]
+
+def delete_medical_report(file_id):
+    """
+    Deletes a specific medical report file.
+    
+    Args:
+        file_id (str): The ID of the metadata record
+    
+    Returns:
+        True if the file was deleted, False otherwise
+    """
+    from bson.objectid import ObjectId
+    
+    client = get_mongo_client()
+    db = client["medical_reports_db"]
+    collection = db["medical_reports_metadata"]
+    
+    # Get the metadata record
+    metadata = collection.find_one({"_id": ObjectId(file_id)})
+    if not metadata:
+        return False
+    
+    # Get the file path
+    uploads_dir = ensure_upload_dir()
+    file_path = os.path.join(uploads_dir, metadata["stored_filename"])
+    
+    # Delete the file if it exists
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    
+    # Delete the metadata record
+    collection.delete_one({"_id": ObjectId(file_id)})
+    
+    return True

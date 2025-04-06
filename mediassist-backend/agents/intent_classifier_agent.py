@@ -6,7 +6,7 @@ from config import API_BASE_URL, API_KEY
 
 class IntentClassification(BaseModel):
     """Classification of user intent for routing in the conversation graph."""
-    intent: Literal["user_profile", "nutrition", "medical_conditions", "insights", "general"] = Field(
+    intent: Literal["user_profile", "nutrition", "medical_conditions", "insights"] = Field(
         description="The classified intent of the user's message"
     )
     confidence: float = Field(
@@ -26,7 +26,6 @@ Your task is to classify the intent into one of the following categories:
 2. nutrition: Messages related to inputting food information (e.g., meals, snacks, drinks)
 3. medical_conditions: Messages related to diseases, symptoms, treatments, medications, etc.
 4. data_fetcher: Messages asking for analysis, insights, or recommendations based on their data, especially nutrition data over time
-5. general: General queries or messages that don't fit into the above categories
 
 Examples:
 - "I am 35 years old and weigh 70kg" → user_profile

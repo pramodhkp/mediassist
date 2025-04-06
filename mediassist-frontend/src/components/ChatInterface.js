@@ -15,7 +15,7 @@ const ChatInterface = () => {
     {
       id: 1,
       type: 'assistant',
-      content: 'Hello! I\'m your MediAssist AI. How can I help you with your health today?',
+      content: 'Hello! I\'m your HealthSphere AI. How can I help you with your health today?',
       timestamp: new Date()
     }
   ]);

@@ -23,8 +23,9 @@ graph_builder = StateGraph(State)
 
 def forward_or_respond(state):
     """Decides whether to forward the request to another agent or respond directly using LLM-based intent classification."""
-    user_message = state["messages"][0]
+    user_message = state["messages"][-2]
     system_message = SystemMessage(content=INTENT_CLASSIFIER_SYSTEM_PROMPT)
+    print(user_message)
     
     # Use the intent classifier to determine thpe user's intent
     classification = intent_classifier_llm.invoke([system_message, user_message])

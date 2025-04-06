@@ -1,5 +1,6 @@
 from langchain_core.pydantic_v1 import BaseModel, Field
 from datetime import datetime
+from typing import Optional
 
 class NutritionData(BaseModel):
     food_name: str
@@ -28,3 +29,10 @@ class InsightsData(BaseModel):
     content: str  # The actual insights content
     date: datetime = Field(default_factory=datetime.utcnow)
     metadata: dict = {}  # Optional metadata about the insights
+
+class MedicalReportData(BaseModel):
+    filename: str
+    file_type: str
+    file_size: int
+    description: Optional[str] = None
+    uploadDate: datetime = Field(default_factory=datetime.utcnow)

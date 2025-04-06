@@ -8,3 +8,8 @@ langgraph==0.3.2
 schedule
 python-dotenv
 requests
+werkzeug
+openai>=1.0.0  # For audio transcription support
+litellm>=1.0.0  # For direct transcription support
+langchain-ollama  # For local LLM integration
+pdfplumber  # For PDF parsing

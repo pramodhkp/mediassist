@@ -1,3 +1,49 @@
+# MediAssist
+
+A health assistant application that helps users manage their health data and provides insights.
+
+## Features
+
+### Speech-to-Text Functionality
+
+MediAssist includes a speech-to-text feature that allows users to record their messages instead of typing them:
+
+- **Hold to Record**: Press and hold the microphone button to start recording your message.
+- **Release to Send**: Release the button to automatically transcribe and send your message.
+- **Edit Before Sending**: Hold the Shift key while recording, then release to transcribe the text to the input field for editing before sending.
+
+#### How It Works
+
+1. The frontend uses the browser's MediaRecorder API to capture audio.
+2. The recorded audio is sent to the backend as a blob.
+3. The backend uses OpenAI's gpt-4o-mini-transcribe model via LiteLLM to transcribe the audio.
+4. The transcribed text is either automatically sent as a message or placed in the input field for editing, depending on whether the Shift key was held during recording.
+
+#### Visual Indicators
+
+- The microphone button turns red and pulses while recording.
+- When the Shift key is held, the button turns blue to indicate that the transcribed text will be placed in the input field instead of being sent automatically.
+
+### Medical Reports Management
+
+MediAssist includes a medical reports management feature that allows users to upload, view, download, and delete their medical reports:
+
+- **Upload Reports**: Users can upload medical reports in various formats (PDF, images, etc.).
+- **View Reports**: Users can view a list of all uploaded reports with details like filename, upload date, and file size.
+- **Download Reports**: Users can download their reports for viewing or sharing.
+- **Delete Reports**: Users can delete reports that are no longer needed.
+- **Deep Analysis**: Users can trigger a deep analysis of their medical reports to get personalized insights.
+
+#### How It Works
+
+1. The frontend provides a user interface for uploading and managing medical reports.
+2. Files are uploaded to the backend and stored in the 'uploads' directory.
+3. File metadata is stored in MongoDB for efficient retrieval and management.
+4. The backend provides APIs for uploading, downloading, deleting, and analyzing reports.
+5. The Deep Analysis feature uses a specialized AI agent that analyzes the report in context with the user's profile, medical conditions, and nutrition data to provide personalized insights.
+
+## Setup and Installation
+
 # MediAssist: AI-Powered Health Assistant
 
 MediAssist is an intelligent health assistant that helps users track and manage their health information, provides personalized insights, and answers health-related queries using advanced AI.
