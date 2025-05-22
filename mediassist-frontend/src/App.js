@@ -6,6 +6,7 @@ import DailyInsights from './components/DailyInsights';
 import WeeklyInsights from './components/WeeklyInsights';
 import LifestyleProfile from './components/LifestyleProfile';
 import MedicalReports from './components/MedicalReports';
+import MedicationTracker from './components/MedicationTracker';
 
 const { Header, Content } = Layout;
 
@@ -26,6 +27,9 @@ function App() {
             </div>
             <div className="medical-reports-container">
               <MedicalReports />
+            </div>
+            <div className="medication-tracker-container">
+              <MedicationTracker />
             </div>
           </div>
           <div className="daily-insights">

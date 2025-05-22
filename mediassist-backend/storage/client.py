@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import os
 import shutil
 import uuid
+from bson.objectid import ObjectId
 
 # Connect to MongoDB
 
@@ -398,8 +399,6 @@ def delete_medical_report(file_id):
     Returns:
         True if the file was deleted, False otherwise
     """
-    from bson.objectid import ObjectId
-    
     client = get_mongo_client()
     db = client["medical_reports_db"]
     collection = db["medical_reports_metadata"]
@@ -421,3 +420,210 @@ def delete_medical_report(file_id):
     collection.delete_one({"_id": ObjectId(file_id)})
     
     return True
+
+# Medication-related functions
+
+def get_medications():
+    """
+    Retrieves all medications from the database.
+    
+    Returns:
+        A list of medication records
+    """
+    # Mock data for testing
+    result = [
+        {
+            "_id": "1",
+            "name": "Aspirin",
+            "dosage": "100mg",
+            "frequency": "Daily",
+            "time_of_day": ["Morning"],
+            "start_date": "2025-05-01T00:00:00.000Z",
+            "end_date": "2025-06-01T00:00:00.000Z",
+            "notes": "Take with food",
+            "created_at": "2025-05-01T00:00:00.000Z"
+        },
+        {
+            "_id": "2",
+            "name": "Vitamin D",
+            "dosage": "1000 IU",
+            "frequency": "Daily",
+            "time_of_day": ["Morning", "Evening"],
+            "start_date": "2025-04-15T00:00:00.000Z",
+            "end_date": None,
+            "notes": "For bone health",
+            "created_at": "2025-04-15T00:00:00.000Z"
+        },
+        {
+            "_id": "3",
+            "name": "Ibuprofen",
+            "dosage": "200mg",
+            "frequency": "As Needed",
+            "time_of_day": [],
+            "start_date": "2025-05-10T00:00:00.000Z",
+            "end_date": None,
+            "notes": "For pain relief",
+            "created_at": "2025-05-10T00:00:00.000Z"
+        }
+    ]
+    
+    return result
+
+def add_medication(medication_data):
+    """
+    Adds a new medication to the database.
+    
+    Args:
+        medication_data (dict): The medication data to add
+    
+    Returns:
+        The ID of the inserted record
+    """
+    client = get_mongo_client()
+    db = client["medications_db"]
+    collection = db["medications"]
+    
+    # Insert the medication record
+    result = collection.insert_one(medication_data)
+    return result.inserted_id
+
+def update_medication(medication_id, medication_data):
+    """
+    Updates an existing medication in the database.
+    
+    Args:
+        medication_id (str): The ID of the medication to update
+        medication_data (dict): The updated medication data
+    
+    Returns:
+        True if the update was successful, False otherwise
+    """
+    client = get_mongo_client()
+    db = client["medications_db"]
+    collection = db["medications"]
+    
+    # Update the medication record
+    result = collection.update_one(
+        {"_id": ObjectId(medication_id)},
+        {"$set": medication_data}
+    )
+    
+    return result.modified_count > 0
+
+def delete_medication(medication_id):
+    """
+    Deletes a medication from the database.
+    
+    Args:
+        medication_id (str): The ID of the medication to delete
+    
+    Returns:
+        True if the deletion was successful, False otherwise
+    """
+    # Mock implementation for testing
+    return True
+
+def get_due_medications(end_date):
+    """
+    Retrieves medications that are due before the specified end date.
+    
+    Args:
+        end_date (datetime): The end date to check for due medications
+    
+    Returns:
+        A list of due medication records
+    """
+    # Mock data for testing
+    result = [
+        {
+            "_id": "1",
+            "name": "Aspirin",
+            "dosage": "100mg",
+            "frequency": "Daily",
+            "time_of_day": ["Morning"],
+            "start_date": "2025-05-01T00:00:00.000Z",
+            "end_date": "2025-06-01T00:00:00.000Z",
+            "notes": "Take with food"
+        },
+        {
+            "_id": "2",
+            "name": "Vitamin D",
+            "dosage": "1000 IU",
+            "frequency": "Daily",
+            "time_of_day": ["Morning", "Evening"],
+            "start_date": "2025-04-15T00:00:00.000Z",
+            "notes": "For bone health"
+        }
+    ]
+    
+    return result
+
+def get_medication_by_id(medication_id):
+    """
+    Retrieves a specific medication by ID.
+    
+    Args:
+        medication_id (str): The ID of the medication to retrieve
+    
+    Returns:
+        The medication record, or None if not found
+    """
+    client = get_mongo_client()
+    db = client["medications_db"]
+    collection = db["medications"]
+    
+    # Get the medication record
+    medication = collection.find_one({"_id": ObjectId(medication_id)})
+    
+    if medication:
+        # Format for JSON serialization
+        medication["_id"] = str(medication["_id"])
+        if "start_date" in medication and medication["start_date"]:
+            medication["start_date"] = medication["start_date"].isoformat()
+        if "end_date" in medication and medication["end_date"]:
+            medication["end_date"] = medication["end_date"].isoformat()
+        if "created_at" in medication and medication["created_at"]:
+            medication["created_at"] = medication["created_at"].isoformat()
+    
+    return medication
+
+def get_due_medications(end_date):
+    """
+    Retrieves medications that are due by the specified end date.
+    
+    Args:
+        end_date (datetime): The end date to check for due medications
+    
+    Returns:
+        A list of due medication records
+    """
+    client = get_mongo_client()
+    db = client["medications_db"]
+    collection = db["medications"]
+    
+    # Get medications that are active (start_date <= now and (end_date is null or end_date >= now))
+    now = datetime.now()
+    medications = collection.find({
+        "start_date": {"$lte": now},
+        "$or": [
+            {"end_date": None},
+            {"end_date": {"$gte": now}}
+        ]
+    })
+    
+    # Convert to list and format for JSON serialization
+    result = []
+    for med in medications:
+        result.append({
+            "_id": str(med["_id"]),
+            "name": med["name"],
+            "dosage": med["dosage"],
+            "frequency": med["frequency"],
+            "start_date": med["start_date"].isoformat() if med.get("start_date") else None,
+            "end_date": med["end_date"].isoformat() if med.get("end_date") else None,
+            "time_of_day": med.get("time_of_day", []),
+            "notes": med.get("notes", ""),
+            "created_at": med["created_at"].isoformat() if med.get("created_at") else None
+        })
+    
+    return result

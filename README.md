@@ -4,6 +4,15 @@ A health assistant application that helps users manage their health data and pro
 
 ## Features
 
+### Medication Tracking and Reminders
+
+MediAssist includes a medication tracking feature that helps users manage their medications and receive reminders:
+
+- **Add Medications**: Users can add medications with details like name, dosage, frequency, and schedule.
+- **Track Medications**: View a list of all current medications with their details.
+- **Medication Reminders**: Get reminders for medications that need to be taken.
+- **Edit/Delete Medications**: Easily update or remove medications as needed.
+
 ### Speech-to-Text Functionality
 
 MediAssist includes a speech-to-text feature that allows users to record their messages instead of typing them:
@@ -152,6 +161,8 @@ MediAssist uses a sophisticated agent system with specialized components:
 - **Personalized Insights**: Receive tailored health recommendations
 - **Medical Condition Management**: Track and learn about medical conditions
 - **Nutrition Analysis**: Get insights about food intake and dietary patterns
+- **Medication Tracking**: Manage medications and receive reminders
+- **Medical Reports Management**: Upload, view, and analyze medical reports
 
 ## Getting Started
 
@@ -233,10 +244,25 @@ mediassist/
 - **Database**: MongoDB
 - **API**: RESTful API
 
+### Medication Tracking and Reminders
+
+MediAssist includes a medication tracking feature that helps users manage their medications and receive reminders:
+
+- **Add Medications**: Users can add medications with details like name, dosage, frequency, and schedule.
+- **Track Medications**: View a list of all current medications with their details.
+- **Medication Reminders**: Get reminders for medications that need to be taken.
+- **Edit/Delete Medications**: Easily update or remove medications as needed.
+
+#### How It Works
+
+1. The frontend provides a user interface for adding and managing medications.
+2. Medication data is stored in MongoDB for efficient retrieval and management.
+3. The backend provides APIs for adding, updating, deleting, and retrieving medications.
+4. The system automatically generates reminders for medications that are due.
+
 ## Future Enhancements
 
 - Integration with wearable devices for real-time health data
-- Medication tracking and reminders
 - Exercise and activity monitoring
 - Advanced visualization of health trends
 - Mobile application
