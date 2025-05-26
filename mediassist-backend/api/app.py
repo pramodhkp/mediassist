@@ -15,10 +15,10 @@ from utils import parse_pdf
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from litellm import transcription
-from api.scheduler import insights_scheduler
-from api.chat import ChatHandler
-from api.insights_handler import InsightsHandler
-from api.medication_handler import MedicationHandler
+from .scheduler import app_scheduler # Updated import
+from .chat import ChatHandler
+from .insights_handler import InsightsHandler
+from .medication_handler import medication_bp # Import the new blueprint
 from storage.client import (
     get_user_profile_data, get_medical_conditions_data, get_nutrition_data_for_period,
     store_medical_report, get_medical_reports, get_medical_report, delete_medical_report
@@ -36,11 +36,15 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Allow CORS for all routes and origins
 insights_handler = InsightsHandler()
 chat_handler = ChatHandler()
-medication_handler = MedicationHandler()
 
-# Disable insights scheduler for testing
-# insights_scheduler.start()
-# atexit.register(insights_scheduler.stop)
+# Start all schedulers (insights and medication reminders)
+app_scheduler.start_all_schedulers()
+
+# Register a function to stop all schedulers when the application exits
+atexit.register(app_scheduler.stop_all_schedulers)
+
+# Register blueprints
+app.register_blueprint(medication_bp)
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
@@ -475,103 +479,9 @@ def get_analysis_report(report_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Medication-related endpoints
-
-@app.route('/medications', methods=['GET'])
-def get_all_medications():
-    """
-    Retrieves all medications for the user.
-    """
-    try:
-        medications = medication_handler.get_all_medications()
-        resp = make_response(jsonify({'medications': medications}))
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/medications', methods=['POST'])
-def add_medication():
-    """
-    Adds a new medication.
-    """
-    try:
-        medication_data = request.json
-        if not medication_data:
-            return jsonify({'error': 'No medication data provided'}), 400
-            
-        medication_id = medication_handler.add_new_medication(medication_data)
-        return jsonify({
-            'success': True,
-            'medication_id': medication_id
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/medications/<medication_id>', methods=['GET'])
-def get_medication(medication_id):
-    """
-    Retrieves a specific medication.
-    """
-    try:
-        medication = medication_handler.get_medication_details(medication_id)
-        if not medication:
-            return jsonify({'error': 'Medication not found'}), 404
-            
-        resp = make_response(jsonify({'medication': medication}))
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/medications/<medication_id>', methods=['PUT'])
-def update_medication(medication_id):
-    """
-    Updates a specific medication.
-    """
-    try:
-        medication_data = request.json
-        if not medication_data:
-            return jsonify({'error': 'No medication data provided'}), 400
-            
-        success = medication_handler.update_existing_medication(medication_id, medication_data)
-        if not success:
-            return jsonify({'error': 'Medication not found or update failed'}), 404
-            
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/medications/<medication_id>', methods=['DELETE'])
-def delete_medication(medication_id):
-    """
-    Deletes a specific medication.
-    """
-    try:
-        success = medication_handler.delete_existing_medication(medication_id)
-        if not success:
-            return jsonify({'error': 'Medication not found or deletion failed'}), 404
-            
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/medication_reminders', methods=['GET'])
-def get_medication_reminders():
-    """
-    Retrieves medication reminders for the next specified number of days.
-    """
-    try:
-        days = request.args.get('days', default=1, type=int)
-        reminders = medication_handler.get_medication_reminders(days)
-        resp = make_response(jsonify({'reminders': reminders}))
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 if __name__ == '__main__':
     # Generate initial insights if needed
-    # insights_scheduler.generate_initial_insights()
+    # This method is part of the InsightsScheduler class, now app_scheduler instance
+    app_scheduler.generate_initial_insights() 
     
-    app.run(debug=True, host='0.0.0.0', port=12000)
+    app.run(debug=True)

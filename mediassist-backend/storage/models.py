@@ -1,6 +1,7 @@
 from langchain_core.pydantic_v1 import BaseModel, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
+import mongoengine
 
 class NutritionData(BaseModel):
     food_name: str
@@ -36,3 +37,15 @@ class MedicalReportData(BaseModel):
     file_size: int
     description: Optional[str] = None
     uploadDate: datetime = Field(default_factory=datetime.utcnow)
+
+class Medication(mongoengine.Document):
+    user_id: str = mongoengine.StringField(required=True)
+    medication_name: str = mongoengine.StringField(required=True)
+    dosage: str = mongoengine.StringField(required=False)
+    frequency: str = mongoengine.StringField(required=False)
+    start_date: datetime = mongoengine.DateTimeField()
+    end_date: datetime = mongoengine.DateTimeField(required=False)
+    reminder_times: List[str] = mongoengine.ListField(mongoengine.StringField(), required=False)
+    notes: str = mongoengine.StringField(required=False)
+
+    meta = {'collection': 'medications'}
