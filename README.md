@@ -119,6 +119,10 @@ sequenceDiagram
         IntentClassifier->>Agents: Route to Insights Agent
         Agents->>MongoDB: Retrieve relevant data
         Agents->>Agents: Generate insights
+    else Medication related
+        IntentClassifier->>Agents: Route to Medication Agent
+        Agents->>MongoDB: Store/retrieve medication data
+        Agents->API: Call Medication API for reminders/scheduling
     else General query
         IntentClassifier->>Agents: Route to Output Agent
     end
@@ -139,11 +143,13 @@ MediAssist uses a sophisticated agent system with specialized components:
 - **Medical Conditions Agent**: Handles information about user's health conditions
 - **Nutrition Agent**: Processes food and nutrition-related data
 - **Insights Agent**: Analyzes data and provides actionable health insights
+- **Medication Agent**: Manages medication information, schedules, and reminders.
 
 ### Data Models
 - **User Profile**: Age, gender, height, weight
 - **Medical Conditions**: Condition name, symptoms, treatment, prevention
 - **Nutrition Data**: Food name, calories, protein, carbohydrates, fats
+- **Medication**: User ID, medication name, dosage, frequency, start/end dates, reminder times, notes.
 
 ## Features
 
@@ -152,6 +158,44 @@ MediAssist uses a sophisticated agent system with specialized components:
 - **Personalized Insights**: Receive tailored health recommendations
 - **Medical Condition Management**: Track and learn about medical conditions
 - **Nutrition Analysis**: Get insights about food intake and dietary patterns
+
+### Medication Tracking and Reminders
+
+MediAssist now helps users manage their medications effectively, ensuring they stay on schedule and informed.
+
+**Feature Overview:**
+- **Add & Manage Medications**: Users can add new medications with details like name, dosage, frequency, start/end dates, and custom reminder times. Existing medications can be updated or deleted.
+- **View Schedule**: Users can view a list of all their current medications and their schedules.
+- **Get Reminders**: The system provides reminders for when to take medications. Currently, these reminders are logged on the backend, with frontend components to display due medications.
+- **Query Next Dose**: Users can ask when their next dose for a specific medication is due.
+
+**How It Works (Briefly):**
+- **Data Model**: A new `Medication` model stores medication details in MongoDB, including `user_id`, `medication_name`, `dosage`, `frequency`, `start_date`, `end_date`, `reminder_times` (list of "HH:MM" strings), and `notes`.
+- **API Endpoints**: New RESTful API endpoints under `/api/medications` allow for creating, retrieving, updating, and deleting medication records, as well as fetching medications due for a user.
+- **Medication Agent**: A specialized `MedicationAgent` processes user intents related to medications (e.g., adding a new pill, listing current meds, asking about next doses). It interacts with the medication API.
+- **Scheduler**: A backend scheduler (`APScheduler`) runs every minute. It checks for active medications whose reminder time matches the current time and logs a reminder message to the server console (e.g., "REMINDER: User 'X' take 'Medication Y' at HH:MM").
+
+**Frontend Components:**
+- **Medication Form (`MedicationForm.js`)**: A modal form for adding new medications or editing existing ones. Includes fields for all medication details.
+- **Medication List (`MedicationList.js`)**: Displays all of the user's medications in a card layout, with options to edit or delete each entry.
+- **Medication Reminders Display (`MedicationReminders.js`)**: Shows a list of medications that are currently considered "due" based on their schedule (active and have reminders set). It can also highlight the next specific reminder time for today if applicable.
+- **Medications Page (`MedicationsPage.js`)**: A dedicated page in the frontend that integrates the form, list, and reminders display, providing a complete interface for medication management.
+
+**API Endpoints (for Medication Management):**
+- `POST /api/medications`: Add a new medication.
+- `GET /api/medications/<user_id>`: List all medications for a specific user.
+- `PUT /api/medications/<medication_id>`: Update an existing medication.
+- `DELETE /api/medications/<medication_id>`: Delete a medication.
+- `GET /api/medications/due/<user_id>`: Get medications that are currently active and have reminders set.
+
+**Usage Examples (Chat Interface):**
+Users can interact with the medication features via the chat:
+- *"Add a new medication: Lipitor 10mg, take one tablet every evening at 8 PM, starting today."*
+- *"What medications am I currently taking?"*
+- *"Update my Lipitor dosage to 20mg."* (Note: The system will likely ask for the medication ID for confirmation)
+- *"Remove Aspirin from my list."* (Note: ID confirmation might be requested)
+- *"What pills should I take now?"*
+- *"When is my next dose of Metformin?"*
 
 ## Getting Started
 
@@ -236,10 +280,10 @@ mediassist/
 ## Future Enhancements
 
 - Integration with wearable devices for real-time health data
-- Medication tracking and reminders
 - Exercise and activity monitoring
 - Advanced visualization of health trends
 - Mobile application
+- Enhanced notification system for medication reminders (e.g., push notifications, email)
 
 ## Contributing
 

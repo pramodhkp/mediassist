@@ -15,9 +15,10 @@ from utils import parse_pdf
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from litellm import transcription
-from .scheduler import insights_scheduler
+from .scheduler import app_scheduler # Updated import
 from .chat import ChatHandler
 from .insights_handler import InsightsHandler
+from .medication_handler import medication_bp # Import the new blueprint
 from storage.client import (
     get_user_profile_data, get_medical_conditions_data, get_nutrition_data_for_period,
     store_medical_report, get_medical_reports, get_medical_report, delete_medical_report
@@ -36,11 +37,14 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Allow CORS for all routes and 
 insights_handler = InsightsHandler()
 chat_handler = ChatHandler()
 
-# Start the insights scheduler
-insights_scheduler.start()
+# Start all schedulers (insights and medication reminders)
+app_scheduler.start_all_schedulers()
 
-# Register a function to stop the scheduler when the application exits
-atexit.register(insights_scheduler.stop)
+# Register a function to stop all schedulers when the application exits
+atexit.register(app_scheduler.stop_all_schedulers)
+
+# Register blueprints
+app.register_blueprint(medication_bp)
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
@@ -477,6 +481,7 @@ def get_analysis_report(report_id):
 
 if __name__ == '__main__':
     # Generate initial insights if needed
-    insights_scheduler.generate_initial_insights()
+    # This method is part of the InsightsScheduler class, now app_scheduler instance
+    app_scheduler.generate_initial_insights() 
     
     app.run(debug=True)
